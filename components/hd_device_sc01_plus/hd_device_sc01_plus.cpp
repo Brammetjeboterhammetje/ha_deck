@@ -66,6 +66,7 @@ void HaDeckDevice::setup() {
     indev_drv.read_cb = touchpad_read;
     lv_indev_drv_register(&indev_drv);
 
+
     group = lv_group_create();
     lv_group_set_default(group);
 
