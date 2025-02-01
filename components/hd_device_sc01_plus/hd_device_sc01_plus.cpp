@@ -91,12 +91,6 @@ void HaDeckDevice::setup() {
 }
 
 void HaDeckDevice::loop() {
-    // Don't run timer handler until fully initialized
-    if (!initialized_) {
-        setup();
-        return;
-    }
-
     static unsigned long last_tick = 0;
     unsigned long now = millis();
     
