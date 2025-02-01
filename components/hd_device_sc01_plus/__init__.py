@@ -10,6 +10,7 @@ from esphome.const import (
     CONF_BRIGHTNESS
 )
 
+
 CODEOWNERS = ["@strange-v"]
 
 hd_device_ns = cg.esphome_ns.namespace("hd_device")

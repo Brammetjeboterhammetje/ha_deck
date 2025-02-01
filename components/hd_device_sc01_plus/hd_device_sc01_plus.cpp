@@ -86,7 +86,7 @@ void HaDeckDevice::loop() {
     unsigned long ms = millis();
     if (ms - time_ > 60000) {
         time_ = ms;
-        ESP_LOGCONFIG(TAG, "Free memory: %d bytes", esp_get_free_heap_size());
+        ESP_LOGCONFIG(TAG, "Free memoryyyyyy: %d bytes", esp_get_free_heap_size());
     }
 }
 
