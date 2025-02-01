@@ -20,9 +20,11 @@ public:
     float get_setup_priority() const override;
     uint8_t get_brightness();
     void set_brightness(uint8_t value);
+    uint32_t get_boot_time() const { return boot_start_time; }
 private:
     unsigned long time_ = 0;
     uint8_t brightness_ = 0;
+    uint8_t current_brightness = 0;
 };
 
 }  // namespace hd_device

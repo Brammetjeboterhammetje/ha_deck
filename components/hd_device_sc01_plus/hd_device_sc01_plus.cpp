@@ -22,6 +22,9 @@ LGFX lcd;
 lv_disp_t *indev_disp;
 lv_group_t *group;
 
+// Add boot time measurement
+static unsigned long boot_start_time = 0;
+
 void IRAM_ATTR flush_pixels(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p)
 {
     // Pre-calculate dimensions once
@@ -62,7 +65,15 @@ void IRAM_ATTR touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data
 }
 
 void HaDeckDevice::setup() {
-    lv_init();
+    boot_start_time = millis();
+
+    // Initialize LVGL and LCD in parallel using second core
+    xTaskCreatePinnedToCore([](void *param) {
+        lv_init();
+        return nullptr;
+    }, "lvgl_init", 4096, nullptr, 1, nullptr, 0);
+
+    // Initialize display on main core
     lcd.init();
     lcd.setBrightness(brightness_);
     
@@ -88,16 +99,37 @@ void HaDeckDevice::setup() {
     lv_group_set_default(group);
 
     lv_theme_default_init(disp, lv_color_hex(0xFFEB3B), lv_color_hex(0xFF7043), 1, LV_FONT_DEFAULT);
+
+    ESP_LOGD(TAG, "Boot completed in %lums", millis() - boot_start_time);
 }
 
+// Add display backlight auto-dimming
 void HaDeckDevice::loop() {
     static unsigned long last_tick = 0;
+    static unsigned long last_touch = 0;
+    static uint8_t current_brightness = brightness_;
     unsigned long now = millis();
     
     // Increase minimum update time
     if (now - last_tick >= 10) {  // Changed from 5ms to 10ms
         lv_timer_handler();
         last_tick = now;
+        
+        // Check for touch to reset dimming timer
+        uint16_t x, y;
+        if (lcd.getTouch(&x, &y)) {
+            last_touch = now;
+            if (current_brightness != brightness_) {
+                lcd.setBrightness(brightness_);
+                current_brightness = brightness_;
+            }
+        }
+        
+        // Auto-dim after 30 seconds
+        if (now - last_touch > 30000 && current_brightness > 20) {
+            current_brightness = 20;
+            lcd.setBrightness(current_brightness);
+        }
     }
 
     // Reduce logging frequency
