@@ -23,6 +23,8 @@ public:
 private:
     unsigned long time_ = 0;
     uint8_t brightness_ = 0;
+    bool initialized_ = false;
+    uint8_t setup_stage_ = 0;
 };
 
 }  // namespace hd_device

@@ -53,42 +53,61 @@ void IRAM_ATTR touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data
 }
 
 void HaDeckDevice::setup() {
-    // Initialize LVGL first
-    lv_init();
-    
-    // Initialize display after LVGL
-    lcd.init();
-    lcd.setBrightness(brightness_);
-    
-    // Use original buffer size
-    lv_disp_draw_buf_init(&draw_buf, buf, NULL, LVGL_BUFFER_SIZE);
-
-    static lv_disp_drv_t disp_drv;
-    lv_disp_drv_init(&disp_drv);
-    disp_drv.hor_res = TFT_WIDTH;
-    disp_drv.ver_res = TFT_HEIGHT;
-    disp_drv.rotated = 1;
-    disp_drv.sw_rotate = 1;
-    disp_drv.flush_cb = flush_pixels;
-    disp_drv.draw_buf = &draw_buf;
-    // disp_drv.direct_mode = 1;  // Remove this line
-    lv_disp_t *disp = lv_disp_drv_register(&disp_drv);
-
-    // Apply theme before other initializations
-    lv_theme_default_init(disp, lv_color_hex(0xFFEB3B), lv_color_hex(0xFF7043), 1, LV_FONT_DEFAULT);
-
-    // Initialize touch after display
-    static lv_indev_drv_t indev_drv;
-    lv_indev_drv_init(&indev_drv);
-    indev_drv.type = LV_INDEV_TYPE_POINTER;
-    indev_drv.read_cb = touchpad_read;
-    lv_indev_drv_register(&indev_drv);
-
-    group = lv_group_create();
-    lv_group_set_default(group);
+    // Split initialization across multiple loops to avoid blocking too long
+    if (!initialized_) {
+        setup_stage_++;
+        
+        switch (setup_stage_) {
+            case 1:
+                lv_init();
+                break;
+                
+            case 2:
+                lcd.init();
+                lcd.setBrightness(brightness_);
+                break;
+                
+            case 3:
+                lv_disp_draw_buf_init(&draw_buf, buf, NULL, LVGL_BUFFER_SIZE);
+                
+                static lv_disp_drv_t disp_drv;
+                lv_disp_drv_init(&disp_drv);
+                disp_drv.hor_res = TFT_WIDTH;
+                disp_drv.ver_res = TFT_HEIGHT;
+                disp_drv.rotated = 1;
+                disp_drv.sw_rotate = 1;
+                disp_drv.flush_cb = flush_pixels;
+                disp_drv.draw_buf = &draw_buf;
+                indev_disp = lv_disp_drv_register(&disp_drv);
+                break;
+                
+            case 4:
+                lv_theme_default_init(indev_disp, lv_color_hex(0xFFEB3B), lv_color_hex(0xFF7043), 1, LV_FONT_DEFAULT);
+                break;
+                
+            case 5:
+                static lv_indev_drv_t indev_drv;
+                lv_indev_drv_init(&indev_drv);
+                indev_drv.type = LV_INDEV_TYPE_POINTER;
+                indev_drv.read_cb = touchpad_read;
+                lv_indev_drv_register(&indev_drv);
+                
+                group = lv_group_create();
+                lv_group_set_default(group);
+                
+                initialized_ = true;
+                break;
+        }
+    }
 }
 
 void HaDeckDevice::loop() {
+    // Don't run timer handler until fully initialized
+    if (!initialized_) {
+        setup();
+        return;
+    }
+
     static unsigned long last_tick = 0;
     unsigned long now = millis();
     
