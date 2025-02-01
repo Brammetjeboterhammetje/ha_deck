@@ -22,6 +22,7 @@ public:
 private:
     unsigned long time_ = 0;
     uint8_t brightness_ = 0;
+    lv_obj_t * counter_label_;  // Add this line
 };
 
 }  // namespace hd_device

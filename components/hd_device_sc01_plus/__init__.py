@@ -27,7 +27,6 @@ LVGL_BUILD_FLAGS = [
     "-D LV_LVGL_H_INCLUDE_SIMPLE=1",
 ]
 
-
 async def to_code(config):
     whereami = os.path.realpath(__file__)
     component_dir = os.path.dirname(whereami)
