@@ -1,11 +1,21 @@
 #include "hd_device_sc01_plus.h"
 
+#if CONFIG_SPIRAM_SUPPORT
+#define LVGL_BUFFER_SIZE (TFT_WIDTH * 20)
+#else
+#define LVGL_BUFFER_SIZE (TFT_WIDTH * 10)
+#endif
+
 namespace esphome {
 namespace hd_device {
 
 static const char *const TAG = "HD_DEVICE";
 static lv_disp_draw_buf_t draw_buf;
-static lv_color_t *buf = (lv_color_t *)heap_caps_malloc(TFT_HEIGHT * 20 * sizeof(lv_color_t), MALLOC_CAP_DMA);
+// Optimize buffer size
+static lv_color_t *buf = (lv_color_t *)heap_caps_malloc(
+    LVGL_BUFFER_SIZE * sizeof(lv_color_t), 
+    MALLOC_CAP_DMA | MALLOC_CAP_32BIT
+);
 
 LGFX lcd;
 
@@ -14,14 +24,16 @@ lv_group_t *group;
 
 void IRAM_ATTR flush_pixels(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p)
 {
-    uint32_t w = (area->x2 - area->x1 + 1);
-    uint32_t h = (area->y2 - area->y1 + 1);
-    uint32_t len = w * h;
+    // Pre-calculate dimensions once
+    const uint32_t w = (area->x2 - area->x1 + 1);
+    const uint32_t h = (area->y2 - area->y1 + 1);
+    const uint32_t len = w * h;
 
-    lcd.startWrite();                            /* Start new TFT transaction */
-    lcd.setAddrWindow(area->x1, area->y1, w, h); /* set the working window */
-    lcd.writePixels((uint16_t *)&color_p->full, len, true);
-    lcd.endWrite();                              /* terminate TFT transaction */
+    // Use direct memory writes where possible
+    lcd.startWrite();
+    lcd.setAddrWindow(area->x1, area->y1, w, h);
+    lcd.writePixels((uint16_t *)color_p, len, true);  // Removed the &color_p->full
+    lcd.endWrite();
 
     lv_disp_flush_ready(disp);
 }
@@ -41,12 +53,15 @@ void IRAM_ATTR touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data
 }
 
 void HaDeckDevice::setup() {
-    lv_init();
-    lv_theme_default_init(NULL, lv_color_hex(0xFFEB3B), lv_color_hex(0xFF7043), 1, LV_FONT_DEFAULT);
-
+    // Initialize display first
     lcd.init();
+    lcd.setBrightness(brightness_);
 
-    lv_disp_draw_buf_init(&draw_buf, buf, NULL, TFT_HEIGHT * 20);
+    // Initialize LVGL with optimized settings
+    lv_init();
+    
+    // Use smaller buffer size
+    lv_disp_draw_buf_init(&draw_buf, buf, NULL, TFT_WIDTH * 10);
 
     static lv_disp_drv_t disp_drv;
     lv_disp_drv_init(&disp_drv);
@@ -56,37 +71,38 @@ void HaDeckDevice::setup() {
     disp_drv.sw_rotate = 1;
     disp_drv.flush_cb = flush_pixels;
     disp_drv.draw_buf = &draw_buf;
+    disp_drv.direct_mode = 1;  // Enable direct mode if supported
     lv_disp_t *disp = lv_disp_drv_register(&disp_drv);
 
+    // Optimize touch input
     static lv_indev_drv_t indev_drv;
     lv_indev_drv_init(&indev_drv);
     indev_drv.type = LV_INDEV_TYPE_POINTER;
-    indev_drv.long_press_time = 1000;
-    indev_drv.long_press_repeat_time = 300;
     indev_drv.read_cb = touchpad_read;
     lv_indev_drv_register(&indev_drv);
 
-
+    // Create input group
     group = lv_group_create();
     lv_group_set_default(group);
 
-    lcd.setBrightness(brightness_);
-
-    // Comment out these lines if you don't have the background image yet
-    /*
-    lv_obj_t * bg_image = lv_img_create(lv_scr_act());
-    lv_img_set_src(bg_image, &bg_480x320);
-    lv_obj_set_parent(bg_image, lv_scr_act());
-    */
+    // Apply theme after display setup
+    lv_theme_default_init(disp, lv_color_hex(0xFFEB3B), lv_color_hex(0xFF7043), 1, LV_FONT_DEFAULT);
 }
 
 void HaDeckDevice::loop() {
-    lv_timer_handler();
+    static unsigned long last_tick = 0;
+    unsigned long now = millis();
+    
+    // Only update if enough time has passed
+    if (now - last_tick >= 5) {  // 5ms minimum between updates
+        lv_timer_handler();
+        last_tick = now;
+    }
 
-    unsigned long ms = millis();
-    if (ms - time_ > 60000) {
-        time_ = ms;
-        ESP_LOGCONFIG(TAG, "Available heap memory: %d bytes", esp_get_free_heap_size());
+    // Reduce logging frequency
+    if (now - time_ > 300000) {  // Changed from 60s to 300s
+        time_ = now;
+        ESP_LOGD(TAG, "Available heap: %d bytes", esp_get_free_heap_size());
     }
 }
 
