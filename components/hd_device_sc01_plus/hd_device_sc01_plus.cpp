@@ -64,14 +64,25 @@ void IRAM_ATTR touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data
     data->state = last_touched ? LV_INDEV_STATE_PR : LV_INDEV_STATE_REL;
 }
 
+void HaDeckDevice::lvgl_init_task(void *param) {
+    lv_init();
+    vTaskDelete(nullptr);
+}
+
 void HaDeckDevice::setup() {
     boot_start_time = millis();
 
     // Initialize LVGL and LCD in parallel using second core
-    xTaskCreatePinnedToCore([](void *param) {
-        lv_init();
-        return nullptr;
-    }, "lvgl_init", 4096, nullptr, 1, nullptr, 0);
+    TaskHandle_t task_handle;
+    xTaskCreatePinnedToCore(
+        lvgl_init_task,
+        "lvgl_init",
+        4096,
+        nullptr,
+        1,
+        &task_handle,
+        0
+    );
 
     // Initialize display on main core
     lcd.init();
