@@ -113,7 +113,7 @@ uint8_t HaDeckDevice::get_brightness() {
 }
 
 void HaDeckDevice::set_brightness(uint8_t value) {
-    brightness_ = std::max((uint8_t)20, value);  // Ensure minimum brightness of 20%
+    brightness_ = value;  // Removed minimum brightness limit
     lcd.setBrightness(brightness_);
 }
 
