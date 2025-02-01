@@ -1,9 +1,9 @@
 #include "hd_device_sc01_plus.h"
 
 #if CONFIG_SPIRAM_SUPPORT
-#define LVGL_BUFFER_SIZE (TFT_WIDTH * 20)
+#define LVGL_BUFFER_SIZE (TFT_HEIGHT * 20)  // Changed from WIDTH to HEIGHT
 #else
-#define LVGL_BUFFER_SIZE (TFT_WIDTH * 10)
+#define LVGL_BUFFER_SIZE (TFT_HEIGHT * 20)  // Changed from WIDTH to HEIGHT
 #endif
 
 namespace esphome {
@@ -53,15 +53,15 @@ void IRAM_ATTR touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data
 }
 
 void HaDeckDevice::setup() {
-    // Initialize display first
-    lcd.init();
-    lcd.setBrightness(brightness_);
-
-    // Initialize LVGL with optimized settings
+    // Initialize LVGL first
     lv_init();
     
-    // Use smaller buffer size
-    lv_disp_draw_buf_init(&draw_buf, buf, NULL, TFT_WIDTH * 10);
+    // Initialize display after LVGL
+    lcd.init();
+    lcd.setBrightness(brightness_);
+    
+    // Use original buffer size
+    lv_disp_draw_buf_init(&draw_buf, buf, NULL, LVGL_BUFFER_SIZE);
 
     static lv_disp_drv_t disp_drv;
     lv_disp_drv_init(&disp_drv);
@@ -71,30 +71,29 @@ void HaDeckDevice::setup() {
     disp_drv.sw_rotate = 1;
     disp_drv.flush_cb = flush_pixels;
     disp_drv.draw_buf = &draw_buf;
-    disp_drv.direct_mode = 1;  // Enable direct mode if supported
+    // disp_drv.direct_mode = 1;  // Remove this line
     lv_disp_t *disp = lv_disp_drv_register(&disp_drv);
 
-    // Optimize touch input
+    // Apply theme before other initializations
+    lv_theme_default_init(disp, lv_color_hex(0xFFEB3B), lv_color_hex(0xFF7043), 1, LV_FONT_DEFAULT);
+
+    // Initialize touch after display
     static lv_indev_drv_t indev_drv;
     lv_indev_drv_init(&indev_drv);
     indev_drv.type = LV_INDEV_TYPE_POINTER;
     indev_drv.read_cb = touchpad_read;
     lv_indev_drv_register(&indev_drv);
 
-    // Create input group
     group = lv_group_create();
     lv_group_set_default(group);
-
-    // Apply theme after display setup
-    lv_theme_default_init(disp, lv_color_hex(0xFFEB3B), lv_color_hex(0xFF7043), 1, LV_FONT_DEFAULT);
 }
 
 void HaDeckDevice::loop() {
     static unsigned long last_tick = 0;
     unsigned long now = millis();
     
-    // Only update if enough time has passed
-    if (now - last_tick >= 5) {  // 5ms minimum between updates
+    // Increase minimum update time
+    if (now - last_tick >= 10) {  // Changed from 5ms to 10ms
         lv_timer_handler();
         last_tick = now;
     }

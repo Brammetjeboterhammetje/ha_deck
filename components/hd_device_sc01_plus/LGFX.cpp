@@ -7,8 +7,8 @@ LGFX::LGFX(void)
 {
   {
     auto cfg = _bus_instance.config();
-    cfg.freq_write = 40000000;  // Increase bus speed to 40MHz
-    cfg.freq_read  = 20000000;  // Set read speed to 20MHz
+    cfg.freq_write = 20000000;  // Back to 20MHz from 40MHz
+    cfg.freq_read  = 10000000;  // Back to 10MHz from 20MHz
     cfg.pin_wr = 47;
     cfg.pin_rd = -1;
     cfg.pin_rs = 0;
