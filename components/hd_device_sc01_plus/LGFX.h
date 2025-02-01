@@ -2,6 +2,8 @@
 
 #define LGFX_USE_V1
 #include <LovyanGFX.h>
+#include <Arduino.h>
+#include <esp_heap_caps.h>
 
 #define TFT_WIDTH 320
 #define TFT_HEIGHT 480
@@ -20,5 +22,5 @@ public:
   LGFX(void);
 };
 
-}  // namespace ha_deck
+}  // namespace hd_device
 }  // namespace esphome

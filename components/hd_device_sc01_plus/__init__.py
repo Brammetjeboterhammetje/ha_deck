@@ -18,7 +18,7 @@ HaDeckDevice = hd_device_ns.class_("HaDeckDevice", cg.Component)
 CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(): cv.declare_id(HaDeckDevice),
-        cv.Required(CONF_BRIGHTNESS): cv.int_range(min=0, max=100),
+        cv.Required(CONF_BRIGHTNESS): cv.int_range(min=20, max=100),  # Changed min from 0 to 20
     }
 )
 

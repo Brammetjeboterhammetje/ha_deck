@@ -71,33 +71,12 @@ void HaDeckDevice::setup() {
 
     lcd.setBrightness(brightness_);
 
-    // Create a test UI
-    lv_obj_t * screen = lv_scr_act();
-    
-    // Create a button
-    lv_obj_t * btn = lv_btn_create(screen);
-    lv_obj_set_size(btn, 120, 50);
-    lv_obj_align(btn, LV_ALIGN_CENTER, 0, 0);
-    
-    // Add label to the button
-    lv_obj_t * label = lv_label_create(btn);
-    lv_label_set_text(label, "Touch me!");
-    lv_obj_center(label);
-    
-    // Create a counter label
-    counter_label_ = lv_label_create(screen);
-    lv_label_set_text(counter_label_, "Counter: 0");
-    lv_obj_align(counter_label_, LV_ALIGN_TOP_MID, 0, 20);
-    
-    // Add click event handler
-    lv_obj_add_event_cb(btn, [](lv_event_t * e) {
-        static int counter = 0;
-        counter++;
-        lv_obj_t * label = (lv_obj_t *)lv_event_get_user_data(e);
-        char buf[32];
-        snprintf(buf, sizeof(buf), "Counter: %d", counter);
-        lv_label_set_text(label, buf);
-    }, LV_EVENT_CLICKED, counter_label_);
+    // Comment out these lines if you don't have the background image yet
+    /*
+    lv_obj_t * bg_image = lv_img_create(lv_scr_act());
+    lv_img_set_src(bg_image, &bg_480x320);
+    lv_obj_set_parent(bg_image, lv_scr_act());
+    */
 }
 
 void HaDeckDevice::loop() {
@@ -117,7 +96,7 @@ uint8_t HaDeckDevice::get_brightness() {
 }
 
 void HaDeckDevice::set_brightness(uint8_t value) {
-    brightness_ = value;
+    brightness_ = std::max((uint8_t)20, value);  // Ensure minimum brightness of 20%
     lcd.setBrightness(brightness_);
 }
 
