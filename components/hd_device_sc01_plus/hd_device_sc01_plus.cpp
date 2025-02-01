@@ -59,6 +59,14 @@ void IRAM_ATTR touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data
     last_read = now;
     last_touched = lcd.getTouch(&last_x, &last_y);
     
+    if (last_touched) {
+        // Wake screen on touch if brightness is 0
+        if (brightness_ == 0) {
+            brightness_ = 100;
+            lcd.setBrightness(brightness_);
+        }
+    }
+    
     data->point.x = last_x;
     data->point.y = last_y;
     data->state = last_touched ? LV_INDEV_STATE_PR : LV_INDEV_STATE_REL;
@@ -147,6 +155,23 @@ void HaDeckDevice::loop() {
     if (now - time_ > 300000) {  // Changed from 60s to 300s
         time_ = now;
         ESP_LOGD(TAG, "Available heap: %d bytes", esp_get_free_heap_size());
+    }
+
+    // Enhanced system monitoring every 60 seconds
+    if (now - time_ > 60000) {
+        time_ = now;
+        float cpu_freq = ESP.getCpuFreqMHz();
+        uint32_t free_heap = esp_get_free_heap_size();
+        uint32_t min_free_heap = esp_get_minimum_free_heap_size();
+        uint32_t free_psram = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
+        float heap_frag = 100.0 - (float)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL) * 100.0 / free_heap;
+
+        ESP_LOGD(TAG, "System Status:");
+        ESP_LOGD(TAG, "  CPU: %.1f MHz", cpu_freq);
+        ESP_LOGD(TAG, "  Free Heap: %u bytes (Min: %u bytes)", free_heap, min_free_heap);
+        ESP_LOGD(TAG, "  Heap Fragmentation: %.1f%%", heap_frag);
+        ESP_LOGD(TAG, "  Free PSRAM: %u bytes", free_psram);
+        ESP_LOGD(TAG, "  Uptime: %lu ms", now);
     }
 }
 

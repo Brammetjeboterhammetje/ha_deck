@@ -7,6 +7,10 @@ Config-driven Home Assistant dashboard (built on top of ESPHome using LVGL).
 ![HA Deck dashboard exampl](/images/ha_deck.jpg)
 [Demo video](https://www.youtube.com/watch?v=NPr9ryyTVB4)
 
+##
+Changes I did: Faster boot, Removing background, touch to active and wayyy more. 
+I'm not a pro programmer sooo i do not recommend using it yourself without testing 
+
 ## How it works
 
 The HA Deck comprises of two components: hd_device_[name] and ha_deck itself. The first one has such responsibilities:
