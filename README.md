@@ -53,6 +53,30 @@ hd_device_sc01_plus:
   brightness: 75
 ```
 
+### Setting the Background Color
+
+You can set the background color of the screen by adding the `background_color` option to the `ha_deck` component configuration. The color should be specified in hexadecimal format.
+
+```yaml
+ha_deck:
+  id: deck
+  main_screen: scr_main
+  background_color: "#000000"  # Set the background color to black
+  screens:
+    - name: scr_main
+      widgets:
+        - type: button
+          position: 8, 8
+          text: Rooms
+          icon: 󰠡
+          enabled: return true;
+          on_click:
+            lambda: id(deck).switch_screen("scr_rooms");
+    - name: scr_rooms
+      widgets:
+      ... ... ...
+```
+
 After this, the main component with screens and widgets can be declared (see complete example [here](examples)).
 
 ```yaml
