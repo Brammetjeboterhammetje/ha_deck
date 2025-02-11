@@ -125,19 +125,42 @@ void HaDeckDevice::setup() {
     ESP_LOGD(TAG, "Boot completed in %lums", millis() - boot_start_time);
 }
 
-// ...existing code...
-
+// Add display backlight auto-dimming
 void HaDeckDevice::loop() {
     static unsigned long last_tick = 0;
+    static unsigned long last_touch = 0;
+    static uint8_t current_brightness = brightness_;
     unsigned long now = millis();
     
-    // Only handle LVGL updates
-    if (now - last_tick >= 10) {
+    // Increase minimum update time
+    if (now - last_tick >= 10) {  // Changed from 5ms to 10ms
         lv_timer_handler();
         last_tick = now;
+        
+        // Check for touch to reset dimming timer
+        uint16_t x, y;
+        if (lcd.getTouch(&x, &y)) {
+            last_touch = now;
+            if (current_brightness != brightness_) {
+                lcd.setBrightness(brightness_);
+                current_brightness = brightness_;
+            }
+        }
+        
+        // Auto-dim after 30 seconds
+        if (now - last_touch > 30000 && current_brightness > 20) {
+            current_brightness = 20;
+            lcd.setBrightness(current_brightness);
+        }
     }
 
-    // System monitoring every 60 seconds
+    // Reduce logging frequency
+    if (now - time_ > 300000) {  // Changed from 60s to 300s
+        time_ = now;
+        ESP_LOGD(TAG, "Available heap: %d bytes", esp_get_free_heap_size());
+    }
+
+    // Enhanced system monitoring every 60 seconds
     if (now - time_ > 60000) {
         time_ = now;
         float cpu_freq = ESP.getCpuFreqMHz();
@@ -155,8 +178,6 @@ void HaDeckDevice::loop() {
     }
 }
 
-// ...rest of existing code...
-
 float HaDeckDevice::get_setup_priority() const { return setup_priority::DATA; }
 
 uint8_t HaDeckDevice::get_brightness() {
@@ -164,7 +185,7 @@ uint8_t HaDeckDevice::get_brightness() {
 }
 
 void HaDeckDevice::set_brightness(uint8_t value) {
-    brightness_ = value;
+    brightness_ = value;  // Removed minimum brightness limit
     lcd.setBrightness(brightness_);
 }
 
