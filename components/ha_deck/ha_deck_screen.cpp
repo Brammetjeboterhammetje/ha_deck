@@ -8,7 +8,12 @@ void HaDeckScreen::setup() {
 }
 
 void HaDeckScreen::loop() {
-    
+    if (active_ && inactivity_ > 0) {
+        if (millis() - last_activity_ > inactivity_) {
+            ESP_LOGD(TAG, "Screen %s timeout reached", name_.c_str());
+            set_active(false);
+        }
+    }
 }
 
 float HaDeckScreen::get_setup_priority() const { return setup_priority::AFTER_CONNECTION; }
@@ -21,6 +26,10 @@ std::string HaDeckScreen::get_name() {
 }
 
 void HaDeckScreen::set_inactivity(uint32_t inactivity) {
+    if (inactivity > 3600) {  // max 1 hour timeout
+        ESP_LOGW(TAG, "Inactivity timeout too large, capping at 3600s");
+        inactivity = 3600;
+    }
     inactivity_ = inactivity * 1000;
 }
 
@@ -28,8 +37,13 @@ uint32_t HaDeckScreen::get_inactivity() {
     return inactivity_;
 }
 
-void HaDeckScreen::add_widget(HaDeckWidget *widget) {
+bool HaDeckScreen::add_widget(HaDeckWidget *widget) {
+    if (widget == nullptr) {
+        ESP_LOGW(TAG, "Attempt to add null widget to screen %s", name_.c_str());
+        return false;
+    }
     widgets_.push_back(widget);
+    return true;
 }
 
 void HaDeckScreen::set_active(bool active) {
@@ -43,6 +57,11 @@ void HaDeckScreen::set_active(bool active) {
             widget->destroy();
         }
     }
+}
+
+HaDeckScreen::~HaDeckScreen() {
+    // Clean up widgets if needed
+    set_active(false);
 }
 
 }  // namespace ha_deck
