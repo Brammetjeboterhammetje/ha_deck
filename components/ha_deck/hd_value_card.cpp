@@ -28,13 +28,6 @@ void HdValueCard::set_value_(std::string value) {
     lv_label_set_text(lv_value_, value_.c_str());
 }
 
-void HdValueCard::set_background_color(std::string color) {
-    background_color_ = color;
-    if (lv_main_) {
-        lv_obj_set_style_bg_color(lv_main_, lv_color_hex(std::stoi(color, nullptr, 16)), LV_PART_MAIN | LV_STATE_DEFAULT);
-    }
-}
-
 void HdValueCard::render_() {
     lv_main_ = lv_obj_create(lv_scr_act());
     lv_obj_add_flag(lv_main_, LV_OBJ_FLAG_CLICKABLE);
@@ -57,10 +50,6 @@ void HdValueCard::render_() {
     lv_obj_set_style_pad_right(lv_main_, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_top(lv_main_, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_bottom(lv_main_, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    if (!background_color_.empty()) {
-        lv_obj_set_style_bg_color(lv_main_, lv_color_hex(std::stoi(background_color_, nullptr, 16)), LV_PART_MAIN | LV_STATE_DEFAULT);
-    }
 
     auto value_container = lv_obj_create(lv_main_);
     lv_obj_clear_flag(value_container, LV_OBJ_FLAG_CLICKABLE);
