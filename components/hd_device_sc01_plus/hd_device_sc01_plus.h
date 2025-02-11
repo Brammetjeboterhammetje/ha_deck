@@ -23,11 +23,11 @@ public:
     uint32_t get_boot_time() const { return boot_start_time_; }
 private:
     unsigned long time_ = 0;
-    uint8_t brightness_ = 0;
+    uint8_t brightness_ = 100;  // Initialize brightness_ with a default value
     uint8_t current_brightness = 0;
     unsigned long boot_start_time_ = 0;
     static void lvgl_init_task(void *param);
 };
 
-}  // namespace hd_device
+}  // namespace hd_device   
 }  // namespace esphome
