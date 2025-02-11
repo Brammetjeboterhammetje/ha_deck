@@ -25,9 +25,6 @@ lv_group_t *group;
 // Add boot time measurement
 static unsigned long boot_start_time = 0;
 
-// Add global pointer to instance
-static HaDeckDevice* instance_ = nullptr;
-
 void IRAM_ATTR flush_pixels(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p)
 {
     // Pre-calculate dimensions once
@@ -62,10 +59,11 @@ void IRAM_ATTR touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data
     last_read = now;
     last_touched = lcd.getTouch(&last_x, &last_y);
     
-    if (last_touched && instance_) {
+    if (last_touched) {
         // Wake screen on touch if brightness is 0
-        if (instance_->get_brightness() == 0) {
-            instance_->set_brightness(100);
+        if (brightness_ == 0) {
+            brightness_ = 100;
+            lcd.setBrightness(brightness_);
         }
     }
     
@@ -80,7 +78,6 @@ void HaDeckDevice::lvgl_init_task(void *param) {
 }
 
 void HaDeckDevice::setup() {
-    instance_ = this;  // Store instance pointer
     boot_start_time = millis();
 
     // Initialize LVGL and LCD in parallel using second core
