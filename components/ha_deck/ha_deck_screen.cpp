@@ -1,4 +1,5 @@
 #include "ha_deck_screen.h"
+#include <Arduino.h>  // Include this header for millis()
 
 namespace esphome {
 namespace ha_deck {

@@ -21,6 +21,7 @@ CONF_TEXT = "text"
 CONF_UNIT = "unit"
 CONF_VALUE = "value"
 CONF_ON_CLICK = "on_click"
+CONF_BACKGROUND_COLOR = "background_color"
 
 VALUE_CARD_CONFIG_SCHEMA = cv.Schema(
     {
@@ -34,6 +35,7 @@ VALUE_CARD_CONFIG_SCHEMA = cv.Schema(
                 cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(ValueCardClickTrigger),
             }
         ),
+        cv.Optional(CONF_BACKGROUND_COLOR): cv.string,
     }
 )
 
@@ -52,6 +54,9 @@ async def build_value_card(var, config):
                 config[CONF_VALUE], [], return_type=cg.optional.template(cg.std_string)
             )
         cg.add(var.add_value_lambda(val))
+
+    if background_color := config.get(CONF_BACKGROUND_COLOR):
+        cg.add(var.set_background_color(background_color))
 
     for conf in config.get(CONF_ON_CLICK, []):
         trigger = cg.new_Pvariable(conf[CONF_TRIGGER_ID], var)
